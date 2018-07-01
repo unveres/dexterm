@@ -3,12 +3,19 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <setjmp.h>
 
-struct termios default_term,
+struct _savexy {
+  struct _savexy *ptr;
+  int x;
+  int y;
+};
+
+static struct  termios default_term,
                new_term;
-
-int            has_new_term = 0;
+static int     has_new_term = 0,
+               term_x = -1,
+               term_y = -1;
+static void   *_savexy = NULL;
 
 void termexit(void)
 {
@@ -31,6 +38,42 @@ void terminit(void)
   tcsetattr(0, TCSANOW, &new_term);
   has_new_term = 1;
   atexit(termexit);
+}
+
+void gotoxy(int x, int y)
+{
+  term_x = x;
+  term_y = y; 
+  printf("\e[%u;%uH", y, x);
+}
+
+void savexy(void)
+{
+  struct _savexy *new;
+
+  new = malloc(sizeof(struct _savexy));
+  new->ptr = _savexy;
+  new->x = term_x;
+  new->y = term_y;
+  _savexy = new;
+}
+
+void loadxy(void)
+{
+  struct _savexy *data,
+                 *old;
+
+  data = _savexy;
+  old = data->ptr;
+  gotoxy(data->x, data->y);
+  free(_savexy);
+  _savexy = old;
+}
+
+void getxy(int *x, int *y)
+{
+  *x = term_x;
+  *y = term_y;
 }
 
 int getch(void)
