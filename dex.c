@@ -114,7 +114,7 @@ int main()
 
   terminit();
 
-  GETXY(&x, &y);
+  getxy(&x, &y);
   printf("%d;%d\n", x, y);
 
   /*for (;;) {
