@@ -12,10 +12,8 @@ struct _savexy {
 
 static struct  termios default_term,
                new_term;
-static int     has_new_term = 0,
-               term_x = -1,
-               term_y = -1;
-static void   *_savexy = NULL;
+static int     has_new_term = 0;
+static void   *xy_stack = NULL;
 
 void termexit(void)
 {
@@ -42,8 +40,6 @@ void terminit(void)
 
 void gotoxy(int x, int y)
 {
-  term_x = x;
-  term_y = y; 
   printf("\e[%u;%uH", y, x);
 }
 
@@ -52,10 +48,10 @@ void savexy(void)
   struct _savexy *new;
 
   new = malloc(sizeof(struct _savexy));
-  new->ptr = _savexy;
+  new->ptr = xy_stack;
   new->x = term_x;
   new->y = term_y;
-  _savexy = new;
+  xy_stack = new;
 }
 
 void loadxy(void)
@@ -63,17 +59,33 @@ void loadxy(void)
   struct _savexy *data,
                  *old;
 
-  data = _savexy;
+  data = xy_stack;
   old = data->ptr;
   gotoxy(data->x, data->y);
-  free(_savexy);
-  _savexy = old;
+  free(xy_stack);
+  xy_stack = old;
 }
 
 void getxy(int *x, int *y)
 {
-  *x = term_x;
-  *y = term_y;
+  int ch,
+      rx
+      ry;
+
+  rx = 0;
+  ry = 0;
+
+  printf("\e[6n");
+  scanf("%*c%*c");
+
+  while ((ch = getchar()) != ';')
+    ry = 10 * ry + ch - '0';
+
+  while ((ch = getchar()) != 'R')
+    rx = 10 * rx + ch - '0';
+
+  *x = rx;
+  *y = ry;
 }
 
 int getch(void)
@@ -98,14 +110,18 @@ inline int kbhit(void)
 
 int main()
 {
-  int n;
+  int x, y;
+
   terminit();
 
-  for (;;)
+  GETXY(&x, &y);
+  printf("%d;%d\n", x, y);
+
+  /*for (;;) {
     if (kbhit() > 128)
       break;
+  }
   
-  printf("%d\n", kbhit());
-  termexit();
-  return 0;
+  printf("%d\n", kbhit());*/
+  exit(0);
 }
