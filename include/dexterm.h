@@ -6,6 +6,7 @@
 int  terminit(void);
 void termexit(void);
 void termreset(void);
+void shiftxy(int, int);
 void gotoxy(int, int);
 void getxy(int *, int *);
 void savexy(void);
