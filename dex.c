@@ -53,6 +53,16 @@ void termreset(void)
   printf("\ec");
 }
 
+void clrscr(void)
+{
+  printf("\e[H\e[2J");
+}
+
+void backspace(void)
+{
+  printf("\b \b");
+}
+
 void getxy(int *x, int *y)
 {
   int ch,
