@@ -48,11 +48,6 @@ void termreset(void)
   printf("\ec");
 }
 
-void gotoxy(int x, int y)
-{
-  printf("\e[%u;%uH", y, x);
-}
-
 void getxy(int *x, int *y)
 {
   int ch,
@@ -73,6 +68,28 @@ void getxy(int *x, int *y)
 
   *x = rx;
   *y = ry;
+}
+
+void gotoxy(int x, int y)
+{
+  int tmpx,
+      tmpy;
+
+  if (y == 0) {
+    if (x == 0)
+      return;
+
+    getxy(&tmpx, &tmpy);
+    printf("\e[%u;%uH", tmpy, x);
+    return;
+  }
+
+  if (x == 0) {
+    printf("\e[%uH", y);
+    return;
+  }
+
+  printf("\e[%u;%uH", y, x);
 }
 
 void savexy(void)
