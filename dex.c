@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <dexterm.h>
 
@@ -17,9 +18,7 @@ int main()
   getxy(&x, &y);
   printf("%d;%d\n", x, y);
   scanf("%*s");
-  shiftxy(7, -1);
-  termexit();
-  return 0;
+  exit(0);
 }
 
 
