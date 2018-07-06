@@ -1,6 +1,12 @@
 # dexterm
+## what's done?:
+- resetting terminal
+- getting/setting/saving/loading cursor position
+- asynchronous read from stdin (getch, getche, kbhit)
+-  clearing screen
+
 ## to do
-- support for support
+- support for pipes
 - scrolling
 - erasing functions other than clrscr
 - colors / styling and saving it
