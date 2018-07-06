@@ -30,8 +30,7 @@ int terminit(void)
 
   /** actual initialization **/
 
-  /* saving previous terminal state AND setting default colors */
-  printf("\e7\e[0m");
+  printf("\e[0m"); /* setting default colors */
   tcgetattr(0, &default_term);
   new_term = default_term;
   new_term.c_lflag &= ~(ICANON | ECHO);
@@ -50,12 +49,25 @@ void termexit(void)
 
   tcsetattr(0, TCSANOW, &default_term);
   has_new_term = 0;
-  printf("\e[0m\e8"); /* restoring previous terminal state */
+  printf("\e[0m"); /* restoring previous terminal state */
 }
 
 void termreset(void)
 {
   printf("\ec");
+}
+
+void shiftxy(int x, int y)
+{
+  if (x > 0)
+    printf("\e[%dC", x);
+  else if (x < 0)
+    printf("\e[%dD", -x);
+
+  if (y > 0)
+    printf("\e[%dB", y);
+  else if (y < 0)
+    printf("\e[%dA", -y);
 }
 
 void gotoxy(int x, int y)
