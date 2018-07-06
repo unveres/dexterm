@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <dexterm.h>
 
+#undef scanf
+
 struct _savexy {
   struct _savexy *ptr;
   int x;
@@ -43,6 +45,7 @@ int terminit(void)
 void termexit(void)
 {
   if (has_new_term) {
+
     tcsetattr(0, TCSANOW, &default_term);
     has_new_term = 0;
     printf("\e[0m\e8"); /* restoring previous terminal state */
