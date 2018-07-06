@@ -21,7 +21,7 @@ void termexit(void)
   if (has_new_term) {
     tcsetattr(0, TCSANOW, &default_term);
     has_new_term = 0;
-    printf("\e8"); /* restoring previous terminal state */
+    printf("\e[0m\e8"); /* restoring previous terminal state */
   }
 }
 
@@ -33,9 +33,10 @@ int terminit(void)
     return 1;
   }
 
-  /* actual initialization */
+  /** actual initialization **/
 
-  printf("\e7"); /* saving previous terminal state */
+  /* saving previous terminal state AND setting default colors */
+  printf("\e7\e[0m");
   tcgetattr(0, &default_term);
   new_term = default_term;
   new_term.c_lflag &= ~(ICANON | ECHO);
