@@ -7,6 +7,7 @@
 #include <dexterm.h>
 
 #undef scanf
+#undef vscanf
 
 struct _savexy {
   struct _savexy *ptr;
