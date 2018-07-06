@@ -44,12 +44,12 @@ int terminit(void)
 
 void termexit(void)
 {
-  if (has_new_term) {
+  if (!has_new_term)
+    return;
 
-    tcsetattr(0, TCSANOW, &default_term);
-    has_new_term = 0;
-    printf("\e[0m\e8"); /* restoring previous terminal state */
-  }
+  tcsetattr(0, TCSANOW, &default_term);
+  has_new_term = 0;
+  printf("\e[0m\e8"); /* restoring previous terminal state */
 }
 
 void termreset(void)
