@@ -3,7 +3,6 @@
 #include <stdarg.h>
 #include <termios.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
 #include <dexterm.h>
 
 #undef scanf
@@ -22,6 +21,8 @@ static void           *xy_stack = NULL;
 
 int terminit(void)
 {
+  int tmp;
+
   /* just resetting terminal to dexterm after 1 terminit call */
   if (has_new_term) {
     tcsetattr(0, TCSANOW, &new_term);
@@ -35,6 +36,16 @@ int terminit(void)
   new_term = default_term;
   new_term.c_lflag &= ~(ICANON | ECHO);
   tcsetattr(0, TCSANOW, &new_term);
+
+  /* checking if terminal device is ok */
+
+  printf("\e[5n");
+  scanf("%*c%*c");
+
+  if (getchar() != '0')
+    return 0;
+
+  scanf("%*c");
   
   has_new_term = 1;
   atexit(termexit);
