@@ -157,17 +157,25 @@ void backspace(void)
   printf("\b \b");
 }
 
-int __dexterm_scanf(const char *format, ...)
+int __dexterm_vscanf(const char *format, va_list args)
 {
   struct termios tmp;
-  va_list        args;
   int            r;
 
-  va_start(args, format);
   tcgetattr(0, &tmp);
   tcsetattr(0, TCSANOW, &default_term);
   r = vscanf(format, args);
   tcsetattr(0, TCSANOW, &tmp);
+  return r;
+}
+
+int __dexterm_scanf(const char *format, ...)
+{
+  va_list        args;
+  int            r;
+
+  va_start(args, format);
+  r = __dexterm_vscanf(format, args);
   va_end(args);
 
   return r;
