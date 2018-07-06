@@ -8,6 +8,7 @@ int main()
   terminit();
   getxy(&x, &y);
   printf("%d;%d\n", x, y);
+  scanf("%*s");
 
   /*for (;;) {
     if (kbhit() > 128)
