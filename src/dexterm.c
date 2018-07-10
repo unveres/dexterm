@@ -14,10 +14,10 @@ struct _savexy {
   int y;
 };
 
-static struct  termios default_term,
+static struct termios  default_term,
                        new_term;
-static int             has_new_term = 0;
-static void           *xy_stack = NULL;
+static int             has_new_term  = 0;
+static void           *xy_stack      = NULL;
 
 int terminit(void)
 {
@@ -106,11 +106,8 @@ void gotoxy(int x, int y)
 void getxy(int *x, int *y)
 {
   int ch,
-      rx,
-      ry;
-
-  rx = 0;
-  ry = 0;
+      rx = 0,
+      ry = 0;
 
   printf("\e[6n");
   scanf("%*c%*c");
