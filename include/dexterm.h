@@ -13,6 +13,7 @@ void savexy(void);
 void loadxy(void);
 int  getch(void);
 int  getche(void);
+int  kbwaiting(void);
 int  kbhit(void);
 void clrscr(void);
 void backspace(void);

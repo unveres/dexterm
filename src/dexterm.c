@@ -16,7 +16,8 @@ struct _savexy {
 
 static struct termios  default_term,
                        new_term;
-static int             has_new_term  = 0;
+static int             has_new_term  = 0,
+                       kbw_result    = 0;      /* last result of kbwaiting */
 static void           *xy_stack      = NULL;
 
 int terminit(void)
@@ -161,11 +162,19 @@ int getche(void)
   return r;
 }
 
+inline int kbwaiting(void)
+{
+  ioctl(0, FIONREAD, &kbw_result);
+  return kbw_result;
+}
+
 inline int kbhit(void)
 {
-  int r;
-  ioctl(0, FIONREAD, &r);
-  return r;
+  int tmp;
+
+  tmp = kbw_result;
+  kbwaiting();
+  return !!(kbw_result - tmp);
 }
 
 void clrscr(void)
