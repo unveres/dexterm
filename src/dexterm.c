@@ -57,6 +57,17 @@ void termreset(void)
   printf("\ec");
 }
 
+inline void clearin(void)
+{
+  int i,
+      size;
+
+  size = kbwaiting();
+
+  for (i = 0; i < size; ++i)
+    getchar();
+}
+
 void shiftxy(int x, int y)
 {
   if (x > 0)
@@ -98,6 +109,7 @@ void getxy(int *x, int *y)
       rx = 0,
       ry = 0;
 
+  clearin();
   printf("\e[6n");
   scanf("%*c%*c");
 
