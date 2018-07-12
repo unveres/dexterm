@@ -68,6 +68,10 @@ inline void clearin(void)
     getchar();
 }
 
+/*************************************/
+/* CURSOR POSITION-RELATED FUNCTIONS */
+/*************************************/
+
 void shiftxy(int x, int y)
 {
   if (x > 0)
@@ -103,7 +107,7 @@ void gotoxy(int x, int y)
   printf("\e[%u;%uH", y, x);
 }
 
-void getxy(int *x, int *y)
+inline void getxy(int *x, int *y)
 {
   int ch,
       rx = 0,
@@ -149,6 +153,10 @@ void loadxy(void)
   xy_stack = old;
 }
 
+/***************/
+/* BASIC INPUT */
+/***************/
+
 int getch(void)
 {
   return getchar();
@@ -161,6 +169,10 @@ int getche(void)
   putchar(r);
   return r;
 }
+
+/***************/
+/* ASYNC INPUT */
+/***************/
 
 inline int kbwaiting(void)
 {
@@ -177,6 +189,10 @@ inline int kbhit(void)
   return !!(kbw_result - tmp);
 }
 
+/*******************/
+/* MINOR FUNCTIONS */
+/*******************/
+
 void clrscr(void)
 {
   printf("\e[H\e[2J");
@@ -186,6 +202,10 @@ void backspace(void)
 {
   printf("\b \b");
 }
+
+/***********************/
+/* STDIO COMPATIBILITY */
+/***********************/
 
 int __dexterm_vscanf(const char *format, va_list args)
 {
