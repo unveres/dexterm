@@ -159,6 +159,7 @@ void loadxy(void)
 
 int getch(void)
 {
+  --kbhit_result;
   return getchar();
 }
 
@@ -167,6 +168,7 @@ int getche(void)
   int r;
   r = getchar();
   putchar(r);
+  --kbhit_result;
   return r;
 }
 
