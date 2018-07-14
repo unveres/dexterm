@@ -5,12 +5,12 @@
 
 int main()
 {
-  int ch, t, tmp;
-
-  scanf("%d", &tmp);
+  /*int ch, t, tmp;*/
 
   terminit();
+  printf("%d\n", kbwaiting()); /* testing pipe */
 
+  /*
   for (;;) {
     for (t = 0; t < 250; ++t) {
       if (kbhit()) {
@@ -24,7 +24,7 @@ int main()
     }
     
     printf(".");
-  }
+  }*/
 
   exit(0);
 }
