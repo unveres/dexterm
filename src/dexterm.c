@@ -7,6 +7,8 @@
 
 #undef scanf
 #undef vscanf
+#undef printf
+#undef vprintf
 
 struct _savexy {
   struct _savexy *ptr;
@@ -33,7 +35,7 @@ int terminit(void)
   printf("\e[0m"); /* setting default colors */
   tcgetattr(0, &default_term);
   new_term = default_term;
-  new_term.c_lflag &= ~(ICANON | ECHO);
+  new_term.c_lflag &= ~(ICANON | ECHO | ISIG);
   new_term.c_cc[VMIN] = 1;
   new_term.c_cc[VTIME] = 0;
   tcsetattr(0, TCSANOW, &new_term);
@@ -212,6 +214,19 @@ void backspace(void)
 /* STDIO COMPATIBILITY */
 /***********************/
 
+#define NONVSUP(NAME)                         \
+int __dexterm_##NAME(const char *format, ...) \
+{                                             \
+  va_list        args;                        \
+  int            r;                           \
+                                              \
+  va_start(args, format);                     \
+  r = __dexterm_v##NAME(format, args);        \
+  va_end(args);                               \
+                                              \
+  return r;                                   \
+}
+
 int __dexterm_vscanf(const char *format, va_list args)
 {
   struct termios tmp;
@@ -225,14 +240,14 @@ int __dexterm_vscanf(const char *format, va_list args)
   return r;
 }
 
-int __dexterm_scanf(const char *format, ...)
+NONVSUP(scanf);
+
+int __dexterm_vprintf(const char *format, va_list args)
 {
-  va_list        args;
-  int            r;
-
-  va_start(args, format);
-  r = __dexterm_vscanf(format, args);
-  va_end(args);
-
+  int r;
+  r = vprintf(format, args);
+  fflush(stdout);
   return r;
 }
+
+NONVSUP(printf);
