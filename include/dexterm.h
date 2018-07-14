@@ -20,8 +20,12 @@ void clrscr(void);
 void backspace(void);
 int  __dexterm_vscanf(const char *, va_list);
 int  __dexterm_scanf(const char *, ...);
+int  __dexterm_vprintf(const char *, va_list);
+int  __dexterm_printf(const char *, ...);
 
-#define scanf(__VA_LIST__) __dexterm_scanf(__VA_LIST__)
-#define vscanf(__VA_LIST__) __dexterm_vscanf(__VA_LIST__)
+#define printf(...) __dexterm_printf(__VA_ARGS__)
+#define vprintf(...) __dexterm_vprintf(__VA_ARGS__)
+#define scanf(...) __dexterm_scanf(__VA_ARGS__)
+#define vscanf(...) __dexterm_vscanf(__VA_ARGS__)
 
 #endif
