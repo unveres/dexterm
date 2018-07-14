@@ -1,14 +1,31 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <dexterm.h>
 
+#define dexerror(STR) perror("dexterm: " STR)
 #undef scanf
 #undef vscanf
 #undef printf
 #undef vprintf
+
+/*
+term_in will be our bufor file, which will store data we want access
+through any input function, data stored by term_in is accessed first,
+then the data from stdin; it's required when using terminal requests,
+response may come later than user input when accessing data asynchronically
+so between request and response data is stored in term_in,
+some escape sequences may be also stored there (it may be stored in RAM,
+and probably should, but it's a nonsense creating two exact interfaces
+in two different places, file is more universal than some data structures
+in virtual memory - that's why term_in is a file)
+
+pipe is stored in term_in, but I fucking hate this solution,
+so I want to do it better soon
+*/
 
 struct _savexy {
   struct _savexy *ptr;
@@ -16,29 +33,70 @@ struct _savexy {
   int y;
 };
 
+FILE                  *term_in;
 static struct termios  default_term,
                        new_term;
 static int             has_new_term  = 0,
                        kbhit_result  = 0;
 static void           *xy_stack      = NULL;
 
+static int flen(FILE *f)
+{
+  int r, /* returned value */
+      p; /* actual cursor position */
+
+  p = ftell(f);
+  fseek(f, 0, SEEK_END);
+  r = ftell(f);
+  fseek(f, p, SEEK_SET); /* return to previous position */
+  return r;
+}
+
+static void escseq(void)
+{
+  int ch;
+
+  for (;;) {
+    while ((ch = getchar()) != '\e')
+      fprintf(term_in, "%c", ch);
+
+    if ((ch = getchar()) == '[')
+      return;
+
+    fprintf(term_in, "\e%c", ch);
+  }
+}
+
 int terminit(void)
 {
+  int ch;
   /* just resetting terminal to dexterm after 1 terminit call */
+  
   if (has_new_term) {
-    tcsetattr(0, TCSANOW, &new_term);
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_term);
     return 1;
   }
+
+  if ((term_in = tmpfile()) == NULL) {
+    dexerror("terminit/tmpfile");
+    exit(EXIT_FAILURE);
+  }
+
+  if (!isatty(STDIN_FILENO))
+    while ((ch = getchar()) != EOF)
+      fprintf(term_in, "%c", ch);
+
+  rewind(term_in);
 
   /** actual initialization **/
 
   printf("\e[0m"); /* setting default colors */
-  tcgetattr(0, &default_term);
+  tcgetattr(STDIN_FILENO, &default_term);
   new_term = default_term;
   new_term.c_lflag &= ~(ICANON | ECHO | ISIG);
   new_term.c_cc[VMIN] = 1;
   new_term.c_cc[VTIME] = 0;
-  tcsetattr(0, TCSANOW, &new_term);
+  tcsetattr(STDIN_FILENO, TCSANOW, &new_term);
   
   has_new_term = 1;
   atexit(termexit);
@@ -51,9 +109,10 @@ void termexit(void)
   if (!has_new_term)
     return;
 
-  tcsetattr(0, TCSANOW, &default_term);
+  tcsetattr(STDIN_FILENO, TCSANOW, &default_term);
   has_new_term = 0;
   printf("\e[0m"); /* restoring previous terminal state */
+  fclose(term_in);
 }
 
 void termreset(void)
@@ -61,7 +120,7 @@ void termreset(void)
   printf("\ec");
 }
 
-inline void clearin(void)
+/*inline void clearin(void)
 {
   int i,
       size;
@@ -70,7 +129,7 @@ inline void clearin(void)
 
   for (i = 0; i < size; ++i)
     getchar();
-}
+}*/
 
 /*************************************/
 /* CURSOR POSITION-RELATED FUNCTIONS */
@@ -117,9 +176,8 @@ inline void getxy(int *x, int *y)
       rx = 0,
       ry = 0;
 
-  clearin();
   printf("\e[6n");
-  scanf("%*c%*c");
+  
 
   while ((ch = getchar()) != ';')
     ry = 10 * ry + ch - '0';
@@ -183,8 +241,8 @@ int getche(void)
 inline int kbwaiting(void)
 {
   int r;
-  ioctl(0, FIONREAD, &r);
-  return r;
+  ioctl(STDIN_FILENO, FIONREAD, &r);
+  return r + flen(term_in);
 }
 
 inline int kbhit(void)
@@ -232,10 +290,10 @@ int __dexterm_vscanf(const char *format, va_list args)
   struct termios tmp;
   int            r;
 
-  tcgetattr(0, &tmp);
-  tcsetattr(0, TCSANOW, &default_term);
+  tcgetattr(STDIN_FILENO, &tmp);
+  tcsetattr(STDIN_FILENO, TCSANOW, &default_term);
   r = vscanf(format, args);
-  tcsetattr(0, TCSANOW, &tmp);
+  tcsetattr(STDIN_FILENO, TCSANOW, &tmp);
   kbhit();
   return r;
 }
