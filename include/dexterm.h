@@ -15,7 +15,7 @@ int  getch(void);
 int  getche(void);
 int  kbwaiting(void);
 int  kbhit(void);
-void clearin(void);
+/*void clearin(void);*/
 void clrscr(void);
 void backspace(void);
 int  __dexterm_vscanf(const char *, va_list);
