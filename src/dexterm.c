@@ -34,6 +34,8 @@ int terminit(void)
   tcgetattr(0, &default_term);
   new_term = default_term;
   new_term.c_lflag &= ~(ICANON | ECHO);
+  new_term.c_cc[VMIN] = 1;
+  new_term.c_cc[VTIME] = 0;
   tcsetattr(0, TCSANOW, &new_term);
   
   has_new_term = 1;
@@ -219,6 +221,7 @@ int __dexterm_vscanf(const char *format, va_list args)
   tcsetattr(0, TCSANOW, &default_term);
   r = vscanf(format, args);
   tcsetattr(0, TCSANOW, &tmp);
+  kbhit();
   return r;
 }
 
