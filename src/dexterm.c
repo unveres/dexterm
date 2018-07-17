@@ -13,7 +13,7 @@
 #undef vprintf
 
 /*
-term_in will be our bufor file, which will store data we want access
+term_in will be our buffer file, which will store data we want access
 through any input function, data stored by term_in is accessed first,
 then the data from stdin; it's required when using terminal requests,
 response may come later than user input when accessing data asynchronically
