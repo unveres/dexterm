@@ -8,7 +8,12 @@ int main()
   /*int ch, t, tmp;*/
 
   terminit();
-  printf("%d\n", kbwaiting()); /* testing pipe */
+  
+  /* testing pipe */
+  while (kbwaiting())
+    printf("%c", getch());
+
+  
 
   /*
   for (;;) {
