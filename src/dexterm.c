@@ -219,8 +219,25 @@ void loadxy(void)
 /* BASIC INPUT */
 /***************/
 
-int getch(void)
+int getch(void) /* function to change */
 {
+  int ch;
+
+  if (ftell(term_in) != flen(term_in)) {
+    ch = fgetc(term_in);
+
+    if (ftell(term_in) == flen(term_in)) {
+      fclose(term_in);
+
+      if ((term_in = tmpfile()) == NULL) {
+        dexerror("getch/tmpfile");
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    return ch;
+  }
+
   --kbhit_result;
   return getchar();
 }
@@ -228,9 +245,8 @@ int getch(void)
 int getche(void)
 {
   int r;
-  r = getchar();
+  r = getch();
   putchar(r);
-  --kbhit_result;
   return r;
 }
 
