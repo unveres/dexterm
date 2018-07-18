@@ -40,6 +40,11 @@ static int             has_new_term  = 0,
                        kbhit_result  = 0;
 static void           *xy_stack      = NULL;
 
+FILE *tmpfile2()
+{
+  return fopen("term_in", "w+");
+}
+
 static int flen(FILE *f)
 {
   int r, /* returned value */
@@ -57,10 +62,18 @@ static void escseq(void)
   int ch;
 
   for (;;) {
-    while ((ch = getchar()) != '\e')
-      fprintf(term_in, "%c", ch);
+    printf("hehe1:");
+    do {
+      ch = getchar();
+      printf("hehe2:%d ", ch);
 
-    if ((ch = getchar()) == '[')
+      if (ch == EOF || ch == '\e')
+        break;
+      
+      fprintf(term_in, "%c", ch);
+    } while (1);
+
+    if (ch == EOF || (ch = getchar()) == '[')
       return;
 
     fprintf(term_in, "\e%c", ch);
@@ -77,7 +90,7 @@ int terminit(void)
     return 1;
   }
 
-  if ((term_in = tmpfile()) == NULL) {
+  if ((term_in = tmpfile2()) == NULL) {
     dexerror("terminit/tmpfile");
     exit(EXIT_FAILURE);
   }
@@ -229,7 +242,7 @@ int getch(void) /* function to change */
     if (ftell(term_in) == flen(term_in)) {
       fclose(term_in);
 
-      if ((term_in = tmpfile()) == NULL) {
+      if ((term_in = tmpfile2()) == NULL) {
         dexerror("getch/tmpfile");
         exit(EXIT_FAILURE);
       }
