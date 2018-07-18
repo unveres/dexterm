@@ -177,7 +177,7 @@ inline void getxy(int *x, int *y)
       ry = 0;
 
   printf("\e[6n");
-  
+  escseq();
 
   while ((ch = getchar()) != ';')
     ry = 10 * ry + ch - '0';

@@ -1,12 +1,15 @@
 # dexterm
 ## what's done?:
 - resetting terminal
-- getting/setting/saving/loading cursor position
 - asynchronous read from stdin (getch, getche, kbhit)
--  clearing screen
+- clearing screen
+- support for pipes
+
+## nearly done:
+- getting (NOT WORKS)/setting/saving/loading cursor position
 
 ## to do
-- support for pipes
+- optimizing pipes (cause they suck at this moment)
 - scrolling
 - erasing functions other than clrscr
 - colors / styling and saving it
@@ -21,3 +24,8 @@ low priority:
 - printer support
 - support of more terminals than just VT-100
 - terminal detection, portability between OSes and different terminals
+
+
+
+## where the fuck is the bug?!
+it looks like there's problem with escseq loop, but it is not even executed
