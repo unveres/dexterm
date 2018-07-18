@@ -28,4 +28,5 @@ low priority:
 
 
 ## where the fuck is the bug?!
+dex.c doesn't work when piping
 it looks like there's problem with escseq loop, but it is not even executed
