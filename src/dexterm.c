@@ -6,26 +6,15 @@
 #include <sys/ioctl.h>
 #include <dexterm.h>
 
-#define dexerror(STR) perror("dexterm: " STR)
 #undef scanf
 #undef vscanf
 #undef printf
 #undef vprintf
 
-/*
-term_in will be our buffer file, which will store data we want access
-through any input function, data stored by term_in is accessed first,
-then the data from stdin; it's required when using terminal requests,
-response may come later than user input when accessing data asynchronically
-so between request and response data is stored in term_in,
-some escape sequences may be also stored there (it may be stored in RAM,
-and probably should, but it's a nonsense creating two exact interfaces
-in two different places, file is more universal than some data structures
-in virtual memory - that's why term_in is a file)
-
-pipe is stored in term_in, but I fucking hate this solution,
-so I want to do it better soon
-*/
+#define dexerror(STR) do { \
+  perror("dexterm: " STR); \
+  exit(EXIT_FAILURE);      \
+} while(0)
 
 struct _savexy {
   struct _savexy *ptr;
@@ -37,26 +26,12 @@ FILE                  *term_in;
 static struct termios  default_term,
                        new_term;
 static int             has_new_term  = 0,
-                       kbhit_result  = 0;
+                       kbhit_result  = 0,
+                       pipe_pipe[2],         /* awesome identifier, isn't it? */
+                       term_pipe[2];         /* output and terminal requests */
 static void           *xy_stack      = NULL;
 
-FILE *tmpfile2()
-{
-  return fopen("term_in", "w+");
-}
-
-static int flen(FILE *f)
-{
-  int r, /* returned value */
-      p; /* actual cursor position */
-
-  p = ftell(f);
-  fseek(f, 0, SEEK_END);
-  r = ftell(f);
-  fseek(f, p, SEEK_SET); /* return to previous position */
-  return r;
-}
-
+/*
 static void escseq(void)
 {
   int ch;
@@ -79,10 +54,11 @@ static void escseq(void)
     }
   }
 }
+*/
 
 int terminit(void)
 {
-  int ch;
+  pid_t pid;
   /* just resetting terminal to dexterm after 1 terminit call */
   
   if (has_new_term) {
@@ -90,16 +66,31 @@ int terminit(void)
     return 1;
   }
 
-  if ((term_in = tmpfile2()) == NULL) {
-    dexerror("terminit/tmpfile");
-    exit(EXIT_FAILURE);
+  if (!isatty(STDIN_FILENO)) {
+    pipe(pipe_pipe);
+    pid = fork();
+
+    if (pid == -1)
+      dexerror("terminit/fork");
+
+    if (pid == 0) {
+      /* here should be some support for our program's pipe */
+      exit(EXIT_SUCCESS);
+    }
+
+    stdin = freopen(NULL, "r", stdin);
   }
 
-  if (!isatty(STDIN_FILENO))
-    while ((ch = getchar()) != EOF)
-      fprintf(term_in, "%c", ch);
+  pipe(term_pipe);
+  pid = fork();
 
-  rewind(term_in);
+  if (pid == -1)
+    dexerror("terminit/fork");
+
+  if (pid == 0) {
+    /* here should be some support for terminal requests */
+    exit(EXIT_SUCCESS);
+  }
 
   /** actual initialization **/
 
@@ -232,25 +223,9 @@ void loadxy(void)
 /* BASIC INPUT */
 /***************/
 
-int getch(void) /* function to change */
+int getch(void)
 {
   int ch;
-
-  if (ftell(term_in) != flen(term_in)) {
-    ch = fgetc(term_in);
-
-    if (ftell(term_in) == flen(term_in)) {
-      fclose(term_in);
-
-      if ((term_in = tmpfile2()) == NULL) {
-        dexerror("getch/tmpfile");
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    return ch;
-  }
-
   --kbhit_result;
   return getchar();
 }
