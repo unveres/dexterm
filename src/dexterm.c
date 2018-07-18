@@ -62,21 +62,21 @@ static void escseq(void)
   int ch;
 
   for (;;) {
-    printf("hehe1:");
-    do {
+    if (kbwaiting()) {
       ch = getchar();
-      printf("hehe2:%d ", ch);
 
-      if (ch == EOF || ch == '\e')
-        break;
+      if (ch != '\e') {
+        fprintf(term_in, "%c", ch);
+        continue;
+      }
+
+      ch = getchar();
+
+      if (ch == '[')
+        return;
       
-      fprintf(term_in, "%c", ch);
-    } while (1);
-
-    if (ch == EOF || (ch = getchar()) == '[')
-      return;
-
-    fprintf(term_in, "\e%c", ch);
+      fprintf(term_in, "\e%c", ch);
+    }
   }
 }
 
