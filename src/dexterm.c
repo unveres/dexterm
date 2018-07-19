@@ -27,38 +27,17 @@ static struct termios  default_term,
                        new_term;
 static int             has_new_term  = 0,
                        kbhit_result  = 0,
-                       pipe_pipe[2],         /* awesome identifier, isn't it? */
-                       term_pipe[2];         /* output and terminal requests */
+                       pipe_pipe[2]  = { -1 },
+                       term_pipe[2]  = { -1 };
 static void           *xy_stack      = NULL;
-
-/*
-static void escseq(void)
-{
-  int ch;
-
-  for (;;) {
-    if (kbwaiting()) {
-      ch = getchar();
-
-      if (ch != '\e') {
-        fprintf(term_in, "%c", ch);
-        continue;
-      }
-
-      ch = getchar();
-
-      if (ch == '[')
-        return;
-      
-      fprintf(term_in, "\e%c", ch);
-    }
-  }
-}
-*/
 
 int terminit(void)
 {
   pid_t pid;
+  int   ch,
+        tmp;
+  char  buffer[BUFSIZ];
+
   /* just resetting terminal to dexterm after 1 terminit call */
   
   if (has_new_term) {
@@ -66,20 +45,37 @@ int terminit(void)
     return 1;
   }
 
-  if (!isatty(STDIN_FILENO)) {
-    pipe(pipe_pipe);
-    pid = fork();
+  /* creating process for pipe support */
 
-    if (pid == -1)
-      dexerror("terminit/fork");
+  do {
+    if (!isatty(STDIN_FILENO)) {
+      ch = getchar();
 
-    if (pid == 0) {
-      /* here should be some support for our program's pipe */
-      exit(EXIT_SUCCESS);
+      if (ch == EOF)
+        break; /* if pipe is empty we don't need that process */
+
+      ungetc(ch, stdin);
+      pipe(pipe_pipe);
+      pid = fork();
+
+      if (pid == -1)
+        dexerror("terminit/fork");
+
+      if (pid == 0) {
+        do {
+          read(pipe_pipe[0], &ch, 1);
+          ch = getchar();
+          write(pipe_pipe[1], &ch, 1);
+        } while(ch != EOF);
+
+        exit(EXIT_SUCCESS);
+      }
+
+      stdin = freopen(NULL, "r", stdin);
     }
+  } while(0);
 
-    stdin = freopen(NULL, "r", stdin);
-  }
+  /* creating process for terminal requests support */
 
   pipe(term_pipe);
   pid = fork();
@@ -88,13 +84,33 @@ int terminit(void)
     dexerror("terminit/fork");
 
   if (pid == 0) {
-    /* here should be some support for terminal requests */
+    do {
+      /* outputing text */
+      read(term_pipe[0], &ch, 1);
+
+      if (ch == EOF)
+        break;
+
+      putchar(ch);
+
+      /* support for terminal requests */
+      ioctl(STDIN_FILENO, FIONREAD, &tmp);
+
+      while (tmp != 0) {
+        tmp -= read(STDIN_FILENO, buffer, sizeof(buffer));
+        write(term_pipe[1], buffer, sizeof(buffer));
+      }
+    } while (1);
+
     exit(EXIT_SUCCESS);
   }
 
-  /** actual initialization **/
+  /* setting default colors */
 
-  printf("\e[0m"); /* setting default colors */
+  printf("\e[0m");
+
+  /* setting terminal for asynchronous read */
+
   tcgetattr(STDIN_FILENO, &default_term);
   new_term = default_term;
   new_term.c_lflag &= ~(ICANON | ECHO | ISIG);
@@ -113,27 +129,20 @@ void termexit(void)
   if (!has_new_term)
     return;
 
+  /* restoring previous terminal state */
+
   tcsetattr(STDIN_FILENO, TCSANOW, &default_term);
   has_new_term = 0;
-  printf("\e[0m"); /* restoring previous terminal state */
-  fclose(term_in);
+
+  /* restoring default colors */
+
+  printf("\e[0m"); 
 }
 
 void termreset(void)
 {
   printf("\ec");
 }
-
-/*inline void clearin(void)
-{
-  int i,
-      size;
-
-  size = kbwaiting();
-
-  for (i = 0; i < size; ++i)
-    getchar();
-}*/
 
 /*************************************/
 /* CURSOR POSITION-RELATED FUNCTIONS */
@@ -174,19 +183,30 @@ void gotoxy(int x, int y)
   printf("\e[%u;%uH", y, x);
 }
 
+static int term_pipe_getchar()
+{
+  char r;
+
+  if (read(term_pipe[0], &r, 1))
+    return r;
+
+  return EOF;
+}
+
 inline void getxy(int *x, int *y)
 {
-  int ch,
-      rx = 0,
-      ry = 0;
+  int   rx = 0,
+        ry = 0,
+        ch;
 
-  printf("\e[6n");
-  escseq();
+  write(term_pipe[1], "\e[6n", 4);
+  term_pipe_getchar();
+  term_pipe_getchar();
 
-  while ((ch = getchar()) != ';')
+  while ((ch = term_pipe_getchar()) != ';')
     ry = 10 * ry + ch - '0';
 
-  while ((ch = getchar()) != 'R')
+  while ((ch = term_pipe_getchar()) != 'R')
     rx = 10 * rx + ch - '0';
 
   *x = rx;
@@ -225,7 +245,6 @@ void loadxy(void)
 
 int getch(void)
 {
-  int ch;
   --kbhit_result;
   return getchar();
 }
@@ -246,7 +265,7 @@ inline int kbwaiting(void)
 {
   int r;
   ioctl(STDIN_FILENO, FIONREAD, &r);
-  return r + flen(term_in);
+  return r;
 }
 
 inline int kbhit(void)
