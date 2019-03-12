@@ -8,9 +8,6 @@
 - cursor visual appearance functions: changing and getting size and visibility
 - unistd usleep and sleep
 
-## known bug:
-- putcxy(terminal_width - 1, terminal_height - 1, ch) shifts buffer 1 row down
-
 ## TO DO:
 - dealing with input
 - attributes
